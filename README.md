@@ -1,220 +1,165 @@
-# FLAM — AI R&D Assignment: Parametric Curve Parameter Recovery
+# Parametric Curve — Unknown Parameter Recovery
 
-## 📋 Problem Statement
+## Problem
 
-Given a set of **1,500 data points** $(x, y)$ lying on a parametric curve, the task is to recover three unknown parameters $\theta$, $M$, and $X$ from the following parametric equations:
+We're given a parametric curve defined by:
 
 $$x = t \cdot \cos(\theta) - e^{M|t|} \cdot \sin(0.3t) \cdot \sin(\theta) + X$$
 
 $$y = 42 + t \cdot \sin(\theta) + e^{M|t|} \cdot \sin(0.3t) \cdot \cos(\theta)$$
 
-**Constraints on the unknowns:**
-| Parameter | Range |
-|-----------|-------|
-| $\theta$ | $0° < \theta < 50°$ |
-| $M$ | $-0.05 < M < 0.05$ |
-| $X$ | $0 < X < 100$ |
+and 1,500 data points $(x_i, y_i)$ that lie on this curve (file: `xy_data.csv`).
+
+**Goal:** find the three unknowns — $\theta$, $M$, and $X$ — so that the curve passes through all the given points.
+
+**Ranges:**
+
+| Parameter | Allowed range |
+|-----------|---------------|
+| $\theta$ (angle) | $0\degree < \theta < 50\degree$ |
+| $M$ (growth rate) | $-0.05 < M < 0.05$ |
+| $X$ (horizontal shift) | $0 < X < 100$ |
 | $t$ (curve parameter) | $6 < t < 60$ |
 
-**Data provided:** `xy_data.csv` containing 1,500 $(x, y)$ points sampled from the curve.
-
 ---
 
-## ✅ Solution (Submission)
+## Answer
 
-### Recovered Parameters
+$$\boxed{\theta = 30\degree \quad M = 0.03 \quad X = 55}$$
 
-| Parameter | Value | Exact Form |
-|-----------|-------|------------|
-| $\theta$ | **30°** | $\frac{\pi}{6} \approx 0.5235987756$ radians |
-| $M$ | **0.03** | — |
-| $X$ | **55** | — |
+In radians: $\theta = \frac{\pi}{6} \approx 0.5235987756$
 
-### LaTeX Submission String
+Plugging these in, the full curve is:
 
+$$\left(\; x(t),\; y(t) \;\right) \;=\; \left(\; t\cos\!\left(\tfrac{\pi}{6}\right) - e^{0.03|t|}\sin(0.3t)\sin\!\left(\tfrac{\pi}{6}\right) + 55 \;,\;\; 42 + t\sin\!\left(\tfrac{\pi}{6}\right) + e^{0.03|t|}\sin(0.3t)\cos\!\left(\tfrac{\pi}{6}\right) \;\right)$$
+
+where $6 < t < 60$.
+
+### Submission (LaTeX format)
+
+As specified in the assignment, here is the answer in LaTeX / [Desmos](https://www.desmos.com/calculator/rfj91yrxob) format:
+
+```latex
+\left(t*\cos(0.5235987756)-e^{0.03\left|t\right|}\cdot\sin(0.3t)\sin(0.5235987756)+55,\;42+t*\sin(0.5235987756)+e^{0.03\left|t\right|}\cdot\sin(0.3t)\cos(0.5235987756)\right)
 ```
-\left(t*\cos(0.5235987756)-e^{0.03\left|t\right|}\cdot\sin(0.3t)\sin(0.5235987756)+55,42+t*\sin(0.5235987756)+e^{0.03\left|t\right|}\cdot\sin(0.3t)\cos(0.5235987756)\right)
-```
 
-### Parametric Equations with Recovered Values
-
-$$x = t \cdot \cos\left(\frac{\pi}{6}\right) - e^{0.03|t|} \cdot \sin(0.3t) \cdot \sin\left(\frac{\pi}{6}\right) + 55$$
-
-$$y = 42 + t \cdot \sin\left(\frac{\pi}{6}\right) + e^{0.03|t|} \cdot \sin(0.3t) \cdot \cos\left(\frac{\pi}{6}\right)$$
-
-### Desmos Visualization
-
-The curve can be visualized on [Desmos](https://www.desmos.com/calculator/rfj91yrxob) by entering the LaTeX string above.
+The format is $\left(\; x(t) \;,\; y(t) \;\right)$ — a coordinate pair where the comma separates the $x$-component from the $y$-component. Each component is a function of $t$.
 
 ---
 
-## 🔬 Mathematical Approach
+## How I Solved It
 
-### Step 1: Understanding the Structure — Rotation Decomposition
+### The key observation
 
-The key insight is recognizing that the parametric equations represent a **2D rotation followed by a translation**. This is a well-known transformation in computational geometry (Preparata & Shamos, 1985).
+If you stare at the equations long enough, you notice they have the shape of a **2D rotation**. Define:
 
-Define two component functions:
-- $u(t) = t$ — the "spine" (linear component along the curve)  
-- $w(t) = e^{M|t|} \cdot \sin(0.3t)$ — the "oscillation" (perpendicular displacement)
+$$u = t \qquad\text{and}\qquad w = e^{M|t|} \cdot \sin(0.3t)$$
 
-Then the parametric equations become:
+Then:
 
-$$x - X = u \cdot \cos(\theta) - w \cdot \sin(\theta)$$
+$$x - X = u\cos\theta - w\sin\theta$$
+$$y - 42 = u\sin\theta + w\cos\theta$$
 
-$$y - 42 = u \cdot \sin(\theta) + w \cdot \cos(\theta)$$
+That's just the rotation matrix $R(\theta)$ applied to the vector $(u, w)$, then shifted by $(X, 42)$. Rotations are easy to undo — multiply by $R(-\theta)$ (the transpose) to get back $u$ and $w$:
 
-This is exactly the formula for rotating the point $(u, w)$ by angle $\theta$, then translating by $(X, 42)$. In matrix form:
+$$t = (x - X)\cos\theta + (y - 42)\sin\theta$$
+$$w = -(x - X)\sin\theta + (y - 42)\cos\theta$$
 
-$$\begin{pmatrix} x - X \\ y - 42 \end{pmatrix} = \begin{pmatrix} \cos\theta & -\sin\theta \\ \sin\theta & \cos\theta \end{pmatrix} \begin{pmatrix} u \\ w \end{pmatrix}$$
+The first equation recovers the parameter $t$ directly from any data point, and it only depends on $\theta$ and $X$ — not on $M$. That's what makes this tractable.
 
-This is the standard **2D rotation matrix** $R(\theta)$ (Weisstein, "Rotation Matrix", MathWorld).
+This kind of rotation inversion is standard in computational geometry (see Preparata & Shamos, *Computational Geometry: An Introduction*, Springer, 1985, Ch. 1).
 
-### Step 2: Inverting the Rotation
+### The fitting strategy
 
-Since rotation matrices are orthogonal, $R^{-1} = R^T$ (Anton & Rorres, 2013, *Elementary Linear Algebra*). Applying the inverse:
+Once I can recover $t$ and $w$ for a guess of $(\theta, X)$, I just need to check whether $w$ matches the model $e^{M|t|}\sin(0.3t)$ for some $M$. So the cost function is:
 
-$$\begin{pmatrix} u \\ w \end{pmatrix} = \begin{pmatrix} \cos\theta & \sin\theta \\ -\sin\theta & \cos\theta \end{pmatrix} \begin{pmatrix} x - X \\ y - 42 \end{pmatrix}$$
+$$\text{cost}(\theta, M, X) = \sum_{i=1}^{1500} \Big(w_i^{\text{recovered}} - e^{M|t_i|}\sin(0.3\,t_i)\Big)^2$$
 
-Which gives us the **recovery formulas**:
+I minimized this using **Differential Evolution** (Storn & Price, 1997) — a global optimizer that explores the parameter space without needing gradients — followed by **L-BFGS-B** (Byrd et al., 1995) for local polishing.
 
-$$t_{\text{recovered}} = (x - X)\cos\theta + (y - 42)\sin\theta$$
+### Why not just assume t is evenly spaced?
 
-$$w_{\text{recovered}} = -(x - X)\sin\theta + (y - 42)\cos\theta$$
+My first thought was that the 1,500 rows might correspond to $t = \text{linspace}(6, 60, 1500)$. But looking at the data, the rows aren't sorted by $t$ — the first few $x$-values jump around: $88 \to 74 \to 60 \to 82 \to 101$. So the $t$-values were sampled randomly and shuffled. You have to recover $t$ per-point using the rotation inversion above.
 
-**Critical property:** The first equation recovers $t$ from any data point, using only $\theta$ and $X$ — it does not involve $M$ at all. This separates the parameter estimation problem.
+### A nice sanity check
 
-### Step 3: The Linearity Test
+If the parameters are correct, then $w / \sin(0.3t) = e^{M|t|}$, so:
 
-For the correct $\theta$ and $X$, the recovered $w$ must satisfy:
+$$\ln\!\left(\frac{w}{\sin(0.3t)}\right) = M \cdot |t|$$
 
-$$w_{\text{recovered}} = e^{M|t|} \cdot \sin(0.3t)$$
-
-Taking the natural logarithm of both sides (for points where $\sin(0.3t) > 0$):
-
-$$\ln\left(\frac{w_{\text{recovered}}}{\sin(0.3t_{\text{recovered}})}\right) = M \cdot |t_{\text{recovered}}|$$
-
-This means that if we plot $\ln(C/\sin(0.3t))$ against $|t|$, we should get a **perfect straight line through the origin** with slope $= M$. This linear relationship serves as both a verification criterion and a way to estimate $M$ via linear regression.
-
-### Step 4: Global Optimization via Differential Evolution
-
-Rather than manually iterating over grid points, we use **Differential Evolution** (Storn & Price, 1997) — a population-based stochastic optimization algorithm that:
-
-1. Maintains a population of candidate solutions
-2. Creates new candidates by combining existing ones (mutation + crossover)
-3. Selects survivors based on fitness (lower cost = better)
-4. Converges to the global optimum without requiring gradient information
-
-The **cost function** minimizes the sum of squared residuals:
-
-$$\mathcal{L}(\theta, M, X) = \sum_{i=1}^{1500} \left( w_{\text{recovered},i} - e^{M|t_{\text{recovered},i}|} \cdot \sin(0.3 \cdot t_{\text{recovered},i}) \right)^2$$
-
-### Step 5: Local Refinement via L-BFGS-B
-
-After global optimization finds the approximate basin, **L-BFGS-B** (Byrd et al., 1995) — a limited-memory quasi-Newton method for bound-constrained problems — refines the solution to machine precision.
+This should be a straight line through the origin with slope $M$. The linearity plot below confirms exactly that — slope = 0.03.
 
 ---
 
-## 📊 Results & Verification
+## Results
 
-### Fit Quality Metrics
+### Fit quality
 
 | Metric | Value |
 |--------|-------|
-| Mean L1 distance (per point) | $2.06 \times 10^{-5}$ |
+| Mean L1 distance per point | $2.06 \times 10^{-5}$ |
 | Max L1 distance | $5.53 \times 10^{-5}$ |
-| Sum L1 distance (all points) | $0.031$ |
-| Sum of squared residuals | $4.38 \times 10^{-7}$ |
+| Sum of all L1 distances | $0.031$ |
 | Recovered $t$ range | $[6.05, 59.99]$ |
 
-The tiny residuals (~$10^{-5}$) are due to floating-point rounding in the CSV data (values stored to 6 decimal places). The fit is **exact to within numerical precision**.
+The errors are at the level of floating-point rounding in the CSV (values have ~6 decimal places). The fit is essentially exact.
 
-### Visual Verification
+### Plots
 
-#### 1. Data Points vs. Fitted Curve
-The red curve passes perfectly through all 1,500 blue data points:
+**Data vs. fitted curve** — the red curve passes right through every blue point:
 
-![Curve Fit](plots/curve_fit.png)
+![curve fit](plots/curve_fit.png)
 
-#### 2. Residual Distribution
-Residuals are tightly centered around zero with magnitude ~$10^{-5}$, confirming the fit quality:
+**Residual distribution** — residuals are tightly centered around zero (~$10^{-5}$):
 
-![Residual Analysis](plots/residual_analysis.png)
+![residuals](plots/residual_analysis.png)
 
-#### 3. Linearity Verification
-$\ln(C/\sin(0.3t))$ vs $|t|$ forms a perfect straight line with slope $M = 0.03$:
+**Linearity check** — $\ln(w/\sin(0.3t))$ vs $|t|$ is a perfect straight line with slope $M = 0.03$:
 
-![Linearity Check](plots/linearity_check.png)
+![linearity](plots/linearity_check.png)
 
 ---
 
-## 🛠️ How to Reproduce
+## Running the Code
 
-### Prerequisites
+You'll need Python 3 with `numpy`, `pandas`, `scipy`, and `matplotlib`:
 
 ```bash
 pip install numpy pandas scipy matplotlib
 ```
 
-### Running the Solution
+Then:
 
 ```bash
-# Step 1: Run the main solver
-python solve_parametric_curve.py
-
-# Step 2: Run independent verification
-python verify_solution.py
-```
-
-### Expected Output
-
-```
-FINAL RESULTS
-======================================================================
-  theta = 30.000000 deg ~ 30 deg = pi/6 ~ 0.5235987756 rad
-  M     = 0.0300000000 ~ 0.03
-  X     = 55.0000000000 ~ 55
-
-VERIFICATION PASSED
-  Mean L1 = 2.06e-05 < threshold 1e-03
+python solve_parametric_curve.py    # finds the parameters, saves plots
+python verify_solution.py           # independent check with known answer
 ```
 
 ---
 
-## 📁 Repository Structure
+## Files
 
 ```
-FLAM/
-├── README.md                    # This file — solution explanation
-├── xy_data.csv                  # Given data: 1,500 (x, y) points
-├── solve_parametric_curve.py    # Main solver script
-├── verify_solution.py           # Independent verification script
+├── README.md                    # this file
+├── xy_data.csv                  # the 1,500 data points (given)
+├── solve_parametric_curve.py    # main solver
+├── verify_solution.py           # standalone verification
 └── plots/
-    ├── curve_fit.png            # Data vs. fitted curve overlay
-    ├── residual_analysis.png    # Residual distribution + L1 per t
-    └── linearity_check.png     # log-linearity verification
+    ├── curve_fit.png            # data vs. fitted curve
+    ├── residual_analysis.png    # residual histogram + L1 vs t
+    └── linearity_check.png     # log-linearity check for M
 ```
 
 ---
 
-## 📖 References
+## References
 
-1. **Storn, R. & Price, K.** (1997). "Differential Evolution – A Simple and Efficient Heuristic for Global Optimization over Continuous Spaces." *Journal of Global Optimization*, 11(4), 341–359. [DOI: 10.1023/A:1008202821328](https://doi.org/10.1023/A:1008202821328)
+1. Storn, R. & Price, K. (1997). Differential Evolution — A Simple and Efficient Heuristic for Global Optimization over Continuous Spaces. *Journal of Global Optimization*, 11(4), 341–359. [doi:10.1023/A:1008202821328](https://doi.org/10.1023/A:1008202821328)
 
-2. **Byrd, R.H., Lu, P., Nocedal, J. & Zhu, C.** (1995). "A Limited Memory Algorithm for Bound Constrained Optimization." *SIAM Journal on Scientific Computing*, 16(5), 1190–1208. [DOI: 10.1137/0916069](https://doi.org/10.1137/0916069)
+2. Byrd, R.H., Lu, P., Nocedal, J. & Zhu, C. (1995). A Limited Memory Algorithm for Bound Constrained Optimization. *SIAM Journal on Scientific Computing*, 16(5), 1190–1208. [doi:10.1137/0916069](https://doi.org/10.1137/0916069)
 
-3. **Preparata, F.P. & Shamos, M.I.** (1985). *Computational Geometry: An Introduction*. Springer-Verlag, New York.
+3. Preparata, F.P. & Shamos, M.I. (1985). *Computational Geometry: An Introduction*. Springer-Verlag.
 
-4. **Anton, H. & Rorres, C.** (2013). *Elementary Linear Algebra: Applications Version* (11th ed.). Wiley. (Chapter 4: Rotation Matrices and Orthogonal Transformations)
+4. Weisstein, E.W. Rotation Matrix. *MathWorld*. [mathworld.wolfram.com/RotationMatrix.html](https://mathworld.wolfram.com/RotationMatrix.html)
 
-5. **Weisstein, E.W.** "Parametric Equations." *MathWorld — A Wolfram Web Resource*. [https://mathworld.wolfram.com/ParametricEquations.html](https://mathworld.wolfram.com/ParametricEquations.html)
-
-6. **Weisstein, E.W.** "Rotation Matrix." *MathWorld — A Wolfram Web Resource*. [https://mathworld.wolfram.com/RotationMatrix.html](https://mathworld.wolfram.com/RotationMatrix.html)
-
-7. **SciPy Documentation.** `scipy.optimize.differential_evolution`. [https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.differential_evolution.html](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.differential_evolution.html)
-
----
-
-## 📝 Summary
-
-The parametric curve fitting problem was solved by recognizing the underlying **rotation + translation** structure of the equations. By applying the inverse rotation, the parameter $t$ can be recovered for each data point using only $\theta$ and $X$. This reduces the problem to a standard nonlinear optimization, which was solved using **Differential Evolution** (global search) followed by **L-BFGS-B** (local refinement). The solution **θ = 30°, M = 0.03, X = 55** produces a perfect fit with mean L1 distance of $2.06 \times 10^{-5}$.
+5. SciPy documentation: [differential_evolution](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.differential_evolution.html), [minimize (L-BFGS-B)](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html)
