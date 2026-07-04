@@ -1,13 +1,3 @@
-"""
-solve_parametric_curve.py
-
-Finds unknown parameters (theta, M, X) in a parametric curve equation
-by treating it as a rotated + translated oscillation and using global
-optimization to minimize the reconstruction error.
-
-Author: Kiran Kumar Gedela
-"""
-
 import numpy as np
 import pandas as pd
 from scipy.optimize import differential_evolution, minimize
@@ -18,12 +8,10 @@ import time
 
 matplotlib.use('Agg')
 
-# --- config ---
 DATA_FILE = "xy_data.csv"
 PLOTS_DIR = "plots"
 os.makedirs(PLOTS_DIR, exist_ok=True)
 
-# bounds from the assignment
 THETA_BOUNDS = (np.radians(0.1), np.radians(49.9))
 M_BOUNDS = (-0.05, 0.05)
 X_BOUNDS = (0.1, 99.9)
@@ -32,8 +20,6 @@ print("=" * 70)
 print("  Parametric Curve Parameter Recovery")
 print("=" * 70)
 
-
-# load the data
 print("\n[1] Loading data...")
 df = pd.read_csv(DATA_FILE)
 x_data = df['x'].values
@@ -44,40 +30,21 @@ print(f"  {n_points} points loaded from '{DATA_FILE}'")
 print(f"  x in [{x_data.min():.4f}, {x_data.max():.4f}]")
 print(f"  y in [{y_data.min():.4f}, {y_data.max():.4f}]")
 
-
-# The main idea:
-#
-# If we let u = t and w = exp(M|t|)*sin(0.3t), the parametric equations
-# are really just rotating (u, w) by theta and shifting by (X, 42).
-# That means we can undo the rotation to get t and w back:
-#
-#   t = (x - X)*cos(theta) + (y - 42)*sin(theta)
-#   w = -(x - X)*sin(theta) + (y - 42)*cos(theta)
-#
-# Then we check if w actually matches exp(M|t|)*sin(0.3t).
-# When theta, M, X are correct, the match is perfect.
-
 def cost_function(params, x_data, y_data):
-    """Sum of squared differences between recovered w and model w."""
     theta, M, X = params
     ct, st = np.cos(theta), np.sin(theta)
 
     xp = x_data - X
     yp = y_data - 42
 
-    # undo the rotation
     t_rec = xp * ct + yp * st
     w_rec = -xp * st + yp * ct
 
-    # what the model says w should be
     w_model = np.exp(M * np.abs(t_rec)) * np.sin(0.3 * t_rec)
 
     return np.sum((w_rec - w_model) ** 2)
 
-
-# Step 1: global search with Differential Evolution
-# (a population-based optimizer that doesn't need gradients)
-print("\n[2] Global search (Differential Evolution)...")
+print("\n[2] Global search...")
 print(f"    theta: {np.degrees(THETA_BOUNDS[0]):.1f} to {np.degrees(THETA_BOUNDS[1]):.1f} deg")
 print(f"    M:     {M_BOUNDS[0]} to {M_BOUNDS[1]}")
 print(f"    X:     {X_BOUNDS[0]} to {X_BOUNDS[1]}")
@@ -103,9 +70,7 @@ print(f"  Done in {time.time()-t0:.2f}s")
 print(f"  theta={np.degrees(theta_de):.6f} deg, M={M_de:.8f}, X={X_de:.6f}")
 print(f"  cost={de_result.fun:.2e}")
 
-
-# Step 2: polish with L-BFGS-B for extra precision
-print("\n[3] Local refinement (L-BFGS-B)...")
+print("\n[3] Local refinement...")
 t0 = time.time()
 
 refined = minimize(
@@ -121,8 +86,6 @@ print(f"  Done in {time.time()-t0:.4f}s")
 print(f"  theta={np.degrees(theta_opt):.10f} deg, M={M_opt:.10f}, X={X_opt:.10f}")
 print(f"  cost={refined.fun:.2e}")
 
-
-# Step 3: verify the fit
 print("\n[4] Checking results...")
 
 ct, st = np.cos(theta_opt), np.sin(theta_opt)
@@ -134,26 +97,29 @@ w_rec = -xp * st + yp * ct
 w_model = np.exp(M_opt * np.abs(t_rec)) * np.sin(0.3 * t_rec)
 residuals = w_rec - w_model
 
-print(f"  Recovered t: [{t_rec.min():.4f}, {t_rec.max():.4f}] (should be ~6 to ~60)")
+print(f"  Recovered t: [{t_rec.min():.4f}, {t_rec.max():.4f}]")
 
-# reconstruct x,y from the parameters to measure L1 error
 x_recon = t_rec * ct - np.exp(M_opt*np.abs(t_rec))*np.sin(0.3*t_rec)*st + X_opt
 y_recon = 42 + t_rec * st + np.exp(M_opt*np.abs(t_rec))*np.sin(0.3*t_rec)*ct
 
 l1_per_point = np.abs(x_data - x_recon) + np.abs(y_data - y_recon)
+l2_per_point = np.sqrt((x_data - x_recon)**2 + (y_data - y_recon)**2)
 
 print(f"  Mean L1 per point: {l1_per_point.mean():.2e}")
 print(f"  Max L1:            {l1_per_point.max():.2e}")
 print(f"  Total L1:          {l1_per_point.sum():.6f}")
+print(f"  Mean L2 per point: {l2_per_point.mean():.2e}")
+print(f"  Max L2:            {l2_per_point.max():.2e}")
+print(f"  Total L2:          {l2_per_point.sum():.6f}")
 
 theta_deg = np.degrees(theta_opt)
 
 print("\n" + "=" * 70)
 print("  RESULTS")
 print("=" * 70)
-print(f"  theta = {theta_deg:.6f} deg  (~{theta_deg:.0f} deg = pi/6)")
-print(f"  M     = {M_opt:.10f}  (~{M_opt:.2f})")
-print(f"  X     = {X_opt:.10f}  (~{X_opt:.0f})")
+print(f"  theta = {theta_deg:.6f} deg")
+print(f"  M     = {M_opt:.10f}")
+print(f"  X     = {X_opt:.10f}")
 print(f"\n  Clean values:  theta=30 deg,  M=0.03,  X=55")
 
 latex_str = (
@@ -164,12 +130,8 @@ latex_str = (
 print(f"\n  LaTeX: {latex_str}")
 print("=" * 70)
 
-
-# Step 4: generate plots
-
 print("\n[5] Saving plots...")
 
-# use the clean exact values for plotting
 theta_ex = np.pi / 6
 M_ex = 0.03
 X_ex = 55.0
@@ -178,8 +140,6 @@ t_smooth = np.linspace(6, 60, 5000)
 x_curve = t_smooth*np.cos(theta_ex) - np.exp(M_ex*np.abs(t_smooth))*np.sin(0.3*t_smooth)*np.sin(theta_ex) + X_ex
 y_curve = 42 + t_smooth*np.sin(theta_ex) + np.exp(M_ex*np.abs(t_smooth))*np.sin(0.3*t_smooth)*np.cos(theta_ex)
 
-
-# plot 1: data vs fitted curve
 fig, ax = plt.subplots(figsize=(14, 8))
 ax.scatter(x_data, y_data, c='#3498db', alpha=0.4, s=15, label=f'Data ({n_points} pts)', edgecolors='none', zorder=2)
 ax.plot(x_curve, y_curve, color='#e74c3c', lw=2.0, label='Fitted curve', zorder=3)
@@ -198,13 +158,11 @@ plt.savefig(os.path.join(PLOTS_DIR, 'curve_fit.png'), dpi=150, bbox_inches='tigh
 plt.close()
 print("  -> plots/curve_fit.png")
 
-
-# plot 2: residuals
 fig, axes = plt.subplots(1, 2, figsize=(16, 6))
 
 axes[0].hist(residuals, bins=60, color='#2ecc71', edgecolor='#27ae60', alpha=0.8)
 axes[0].axvline(x=0, color='#e74c3c', ls='--', lw=1.5, label='Zero')
-axes[0].set_xlabel('Residual (w_rec - w_model)', fontsize=12)
+axes[0].set_xlabel('Residual', fontsize=12)
 axes[0].set_ylabel('Count', fontsize=12)
 axes[0].set_title('Residual Distribution', fontsize=14, fontweight='bold')
 axes[0].legend(fontsize=11)
@@ -223,8 +181,6 @@ plt.savefig(os.path.join(PLOTS_DIR, 'residual_analysis.png'), dpi=150, bbox_inch
 plt.close()
 print("  -> plots/residual_analysis.png")
 
-
-# plot 3: linearity check (ln(w/sin(0.3t)) should be a straight line with slope M)
 fig, ax = plt.subplots(figsize=(12, 7))
 
 mask = np.sin(0.3 * t_rec) > 0.01
