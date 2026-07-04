@@ -44,7 +44,7 @@ for $6 < t < 60$.
 As required in the assignment instructions, here is the exact answer formatted as a single LaTeX expression for submission. The outer parentheses represent the 2D coordinate pair $(x(t), y(t))$, with a comma explicitly separating the x-coordinate formula from the y-coordinate formula so it graphs correctly in Desmos.
 
 ```latex
-\left(t*\cos(0.5235987756)-e^{0.03\left|t\right|}\cdot\sin(0.3t)\sin(0.5235987756)+55,42+t*\sin(0.5235987756)+e^{0.03\left|t\right|}\cdot\sin(0.3t)\cos(0.5235987756)\right)
+\left(t*\cos(0.5235987756)-e^{0.03\left|t\right|}\cdot\sin(0.3t)\sin(0.5235987756)+55, 42+t*\sin(0.5235987756)+e^{0.03\left|t\right|}\cdot\sin(0.3t)\cos(0.5235987756)\right)
 ```
 
 ---

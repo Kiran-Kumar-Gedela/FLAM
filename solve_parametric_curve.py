@@ -124,7 +124,7 @@ print(f"\n  Clean values:  theta=30 deg,  M=0.03,  X=55")
 
 latex_str = (
     r"\left(t*\cos(0.5235987756)-e^{0.03\left|t\right|}\cdot\sin(0.3t)"
-    r"\sin(0.5235987756)+55,42+t*\sin(0.5235987756)+e^{0.03\left|t\right|}"
+    r"\sin(0.5235987756)+55, 42+t*\sin(0.5235987756)+e^{0.03\left|t\right|}"
     r"\cdot\sin(0.3t)\cos(0.5235987756)\right)"
 )
 print(f"\n  LaTeX: {latex_str}")
