@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Environment
+.env
+venv/
+*.log
+
+# Assignment artifacts (not needed in repo)
+FLAM_AIS.txt
+AI_R&D Assignment_FLAM_WORK.pdf
