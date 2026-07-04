@@ -16,7 +16,7 @@ and 1,500 data points $(x_i, y_i)$ that lie on this curve (file: `xy_data.csv`).
 
 | Parameter | Allowed range |
 |-----------|---------------|
-| $\theta$ (angle) | $0\degree < \theta < 50\degree$ |
+| $\theta$ (angle) | $0° < \theta < 50°$ |
 | $M$ (growth rate) | $-0.05 < M < 0.05$ |
 | $X$ (horizontal shift) | $0 < X < 100$ |
 | $t$ (curve parameter) | $6 < t < 60$ |
@@ -25,25 +25,25 @@ and 1,500 data points $(x_i, y_i)$ that lie on this curve (file: `xy_data.csv`).
 
 ## Answer
 
-$$\boxed{\theta = 30\degree \quad M = 0.03 \quad X = 55}$$
+$$\theta = 30° \qquad M = 0.03 \qquad X = 55$$
 
-In radians: $\theta = \frac{\pi}{6} \approx 0.5235987756$
+In radians: $\theta = \pi/6 \approx 0.5235987756$
 
-Plugging these in, the full curve is:
+Plugging these in, the curve becomes the coordinate pair $(x(t),\ y(t))$:
 
-$$\left(\; x(t),\; y(t) \;\right) \;=\; \left(\; t\cos\!\left(\tfrac{\pi}{6}\right) - e^{0.03|t|}\sin(0.3t)\sin\!\left(\tfrac{\pi}{6}\right) + 55 \;,\;\; 42 + t\sin\!\left(\tfrac{\pi}{6}\right) + e^{0.03|t|}\sin(0.3t)\cos\!\left(\tfrac{\pi}{6}\right) \;\right)$$
+$$x(t) = t \cos\left(\frac{\pi}{6}\right) - e^{0.03|t|} \sin(0.3t) \sin\left(\frac{\pi}{6}\right) + 55$$
 
-where $6 < t < 60$.
+$$y(t) = 42 + t \sin\left(\frac{\pi}{6}\right) + e^{0.03|t|} \sin(0.3t) \cos\left(\frac{\pi}{6}\right)$$
 
-### Submission (LaTeX format)
+for $6 < t < 60$.
 
-As specified in the assignment, here is the answer in LaTeX / [Desmos](https://www.desmos.com/calculator/rfj91yrxob) format:
+### Submission (LaTeX / Desmos format)
+
+As required in the assignment, here is the answer as a single LaTeX expression for [Desmos](https://www.desmos.com/calculator/rfj91yrxob). The outer parentheses represent the coordinate pair $(x(t),\ y(t))$, with a comma separating the x-component from the y-component:
 
 ```latex
-\left(t*\cos(0.5235987756)-e^{0.03\left|t\right|}\cdot\sin(0.3t)\sin(0.5235987756)+55,\;42+t*\sin(0.5235987756)+e^{0.03\left|t\right|}\cdot\sin(0.3t)\cos(0.5235987756)\right)
+\left(t*\cos(0.5235987756)-e^{0.03\left|t\right|}\cdot\sin(0.3t)\sin(0.5235987756)+55,42+t*\sin(0.5235987756)+e^{0.03\left|t\right|}\cdot\sin(0.3t)\cos(0.5235987756)\right)
 ```
-
-The format is $\left(\; x(t) \;,\; y(t) \;\right)$ — a coordinate pair where the comma separates the $x$-component from the $y$-component. Each component is a function of $t$.
 
 ---
 
@@ -53,7 +53,7 @@ The format is $\left(\; x(t) \;,\; y(t) \;\right)$ — a coordinate pair where t
 
 If you stare at the equations long enough, you notice they have the shape of a **2D rotation**. Define:
 
-$$u = t \qquad\text{and}\qquad w = e^{M|t|} \cdot \sin(0.3t)$$
+$$u = t \qquad \text{and} \qquad w = e^{M|t|} \cdot \sin(0.3t)$$
 
 Then:
 
@@ -73,19 +73,19 @@ This kind of rotation inversion is standard in computational geometry (see Prepa
 
 Once I can recover $t$ and $w$ for a guess of $(\theta, X)$, I just need to check whether $w$ matches the model $e^{M|t|}\sin(0.3t)$ for some $M$. So the cost function is:
 
-$$\text{cost}(\theta, M, X) = \sum_{i=1}^{1500} \Big(w_i^{\text{recovered}} - e^{M|t_i|}\sin(0.3\,t_i)\Big)^2$$
+$$\text{cost}(\theta, M, X) = \sum_{i=1}^{1500} \left(w_i^{\text{recovered}} - e^{M|t_i|}\sin(0.3 t_i)\right)^2$$
 
 I minimized this using **Differential Evolution** (Storn & Price, 1997) — a global optimizer that explores the parameter space without needing gradients — followed by **L-BFGS-B** (Byrd et al., 1995) for local polishing.
 
 ### Why not just assume t is evenly spaced?
 
-My first thought was that the 1,500 rows might correspond to $t = \text{linspace}(6, 60, 1500)$. But looking at the data, the rows aren't sorted by $t$ — the first few $x$-values jump around: $88 \to 74 \to 60 \to 82 \to 101$. So the $t$-values were sampled randomly and shuffled. You have to recover $t$ per-point using the rotation inversion above.
+My first thought was that the 1,500 rows might correspond to $t = \text{linspace}(6, 60, 1500)$. But looking at the data, the rows aren't sorted by $t$ — the first few $x$-values jump around: 88, 74, 60, 82, 101. So the $t$-values were sampled randomly and shuffled. You have to recover $t$ per-point using the rotation inversion above.
 
 ### A nice sanity check
 
 If the parameters are correct, then $w / \sin(0.3t) = e^{M|t|}$, so:
 
-$$\ln\!\left(\frac{w}{\sin(0.3t)}\right) = M \cdot |t|$$
+$$\ln\left(\frac{w}{\sin(0.3t)}\right) = M \cdot |t|$$
 
 This should be a straight line through the origin with slope $M$. The linearity plot below confirms exactly that — slope = 0.03.
 
@@ -102,7 +102,7 @@ This should be a straight line through the origin with slope $M$. The linearity 
 | Sum of all L1 distances | $0.031$ |
 | Recovered $t$ range | $[6.05, 59.99]$ |
 
-The errors are at the level of floating-point rounding in the CSV (values have ~6 decimal places). The fit is essentially exact.
+The errors are at the level of floating-point rounding in the CSV (values have about 6 decimal places). The fit is essentially exact.
 
 ### Plots
 
@@ -110,7 +110,7 @@ The errors are at the level of floating-point rounding in the CSV (values have ~
 
 ![curve fit](plots/curve_fit.png)
 
-**Residual distribution** — residuals are tightly centered around zero (~$10^{-5}$):
+**Residual distribution** — residuals are tightly centered around zero (order of $10^{-5}$):
 
 ![residuals](plots/residual_analysis.png)
 
